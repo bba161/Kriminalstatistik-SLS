@@ -513,7 +513,8 @@ renderList();
 
 // Höhe an das einbettende Dokument melden (für iframe mit automatischer Höhe)
 function postHeight() {
-  const h = Math.ceil(document.documentElement.scrollHeight);
+  const app = document.getElementById("app");
+  const h = Math.ceil(app.getBoundingClientRect().height + 8);
   try { window.parent.postMessage({ type: "polizei-atlas:height", height: h }, "*"); } catch (e) {}
 }
 if ("ResizeObserver" in window) new ResizeObserver(postHeight).observe(document.body);
