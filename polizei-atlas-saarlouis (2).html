@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wie kriminell ist Ihre Gemeinde?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #004d8b;
+    --ink: #111d29;
+    --muted: #5a6876;
+    --line: #cdd7e1;
+    --soft: #eef3f7;
+    --bg: #ffffff;
+    --focus: #ffb000;
+  }
+  * { box-sizing: border-box; border-radius: 0; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-weight: 400;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    overflow-wrap: break-word;
+  }
+  button, input { font-family: inherit; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  /* Der Inhaltsbereich ist ein Container: Layout richtet sich nach der verfügbaren Breite, nicht nach dem Bildschirm (wichtig für iframes) */
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; container-type: inline-size; }
+  main { padding: 28px 0 40px; }
+
+  h1, .detail-title { font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+  h1 { font-size: 2.6rem; color: var(--brand); margin: 0; line-height: 1.1; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin: 6px 0 0; }
+
+  h3.section { font-size: 1rem; font-weight: 700; margin: 0 0 2px; }
+  .hint { font-size: 0.85rem; color: var(--muted); margin: 0 0 14px; }
+
+  /* Übersicht */
+  .search { margin: 24px 0 0; }
+  .search label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px; }
+  .search input {
+    width: 100%; max-width: 420px; min-height: 48px; padding: 10px 12px; font-size: 1rem;
+    border: 1px solid #9fb0c0; background: #fff; color: var(--ink);
+    -webkit-appearance: none; appearance: none;
+  }
+  .search input:focus { border-color: var(--brand); }
+  .gem-list { list-style: none; margin: 20px 0 0; padding: 0; border-top: 1px solid var(--line); }
+  .gem-list li { border-bottom: 1px solid var(--line); }
+  .gem-btn {
+    width: 100%; min-height: 56px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    background: none; border: 0; padding: 10px 2px; cursor: pointer; color: var(--ink); text-align: left;
+  }
+  .gem-btn:hover .gem-name { color: var(--brand); text-decoration: underline; }
+  .gem-btn:active { background: var(--soft); }
+  .gem-name { font-size: 1rem; font-weight: 600; }
+  .gem-meta { font-size: 0.875rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .empty { color: var(--muted); font-size: 0.95rem; margin-top: 16px; }
+
+  /* Gemeindeansicht */
+  .back { background: none; border: 0; padding: 10px 0; min-height: 44px; color: var(--brand); font-weight: 600; font-size: 0.95rem; cursor: pointer; }
+  .back:hover { text-decoration: underline; }
+  .detail-title { font-size: 2.1rem; margin: 8px 0 20px; }
+  .detail-title:focus { outline: none; }
+
+  .panel { border: 1px solid var(--line); padding: 20px; min-width: 0; }
+  .panel + .panel { margin-top: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .grid-2 > * { min-width: 0; }
+  .grid-2 .panel { margin: 0; }
+
+  .cases { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 28px; }
+  .cases .big { font-size: 3rem; font-weight: 700; color: var(--brand); letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .cases .lbl { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-top: 4px; }
+  .cases .cmp { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cases .cmp small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); }
+
+  /* Kreisdiagramm */
+  .pie-layout { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr); gap: 20px; align-items: center; }
+  .pie-layout > * { min-width: 0; }
+  .pie-layout svg { width: 100%; height: auto; max-width: 180px; overflow: visible; display: block; }
+  .slice { cursor: pointer; transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .3s ease; }
+  .slice:focus { outline: none; }
+  .slice:focus-visible { stroke: var(--focus); stroke-width: 3; }
+  .legend { list-style: none; margin: 0; padding: 0; font-size: 0.875rem; }
+  .legend li { border-bottom: 1px solid var(--soft); }
+  .legend li:last-child { border-bottom: 0; }
+  .leg-btn {
+    width: 100%; display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: start;
+    background: none; border: 0; padding: 7px 4px; margin: 0 -4px; cursor: pointer; text-align: left; color: var(--ink);
+    transition: background .2s ease; line-height: 1.35;
+  }
+  .leg-btn:hover { background: var(--soft); }
+  .leg-btn[aria-pressed="true"] { background: var(--soft); }
+  .swatch { width: 12px; height: 12px; display: inline-block; margin-top: 3px; }
+  .leg-label { overflow-wrap: anywhere; }
+  .leg-btn .val { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .leg-btn .pct { color: var(--muted); margin-left: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .readout { font-size: 0.85rem; color: var(--muted); margin: 14px 0 0; min-height: 2.6em; }
+  .readout strong { color: var(--ink); font-weight: 600; }
+
+  /* Häufigkeitszahl */
+  .hz-big { font-size: 3rem; font-weight: 700; color: var(--brand); letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .hz-unit { font-size: 0.85rem; color: var(--muted); margin-top: 6px; }
+  .hz-facts { margin: 18px 0 0; border-top: 1px solid var(--line); }
+  .hz-facts div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--soft); font-size: 0.9rem; }
+  .hz-facts div:last-child { border-bottom: 0; }
+  .hz-facts dt { color: var(--muted); }
+  .hz-facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+
+  /* Balkendiagramm */
+  .bars { list-style: none; margin: 0; padding: 0; }
+  .bars li { display: grid; grid-template-columns: 150px 1fr 56px; gap: 10px; align-items: center; padding: 4px 0; font-size: 0.85rem; }
+  .bars .bl { text-align: right; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bars .track { height: 14px; background: var(--soft); }
+  .bars .fill { display: block; height: 100%; width: 0; background: #9fbfdc; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .bars li.current .bl { color: var(--ink); font-weight: 600; }
+  .bars li.current .fill { background: var(--brand); }
+  .bars .bv { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bars li.current .bv { color: var(--brand); font-weight: 600; }
+  .bars li:hover .fill { background: var(--brand); }
+
+  .rank { font-size: 0.95rem; margin: 0 0 14px; }
+  .rank strong { color: var(--brand); }
+
+  footer.note { font-size: 0.78rem; color: var(--muted); margin-top: 18px; line-height: 1.6; }
+
+  /* Schmale Container: Diagramme untereinander */
+  @container (max-width: 760px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* Smartphone */
+  @container (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    main { padding: 22px 0 32px; }
+    h1 { font-size: 2.1rem; }
+    .detail-title { font-size: 1.6rem; margin: 6px 0 16px; }
+    .search input { max-width: none; }
+    .gem-name { font-size: 0.95rem; }
+    .panel { padding: 16px; }
+    .cases .big { font-size: 2.5rem; }
+    .pie-layout { grid-template-columns: 1fr; justify-items: center; gap: 14px; }
+    .pie-layout svg { max-width: 180px; }
+    .legend { width: 100%; }
+    .hz-big { font-size: 2.5rem; }
+    .bars li { grid-template-columns: 92px 1fr 46px; gap: 8px; font-size: 0.8rem; }
+    .bars .track { height: 12px; }
+    footer.note { font-size: 0.75rem; }
+  }
+
+  @container (max-width: 380px) {
+    .bars li { grid-template-columns: 76px 1fr 42px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<main class="wrap" id="app">
+  <!-- Übersicht -->
+  <section id="home" aria-labelledby="home-title">
+    <h1 id="home-title">Wie kriminell ist Ihre Gemeinde?</h1>
+    <p class="sub">Polizeiliche Kriminalstatistik 2025, Gemeinden im Vergleich</p>
+
+    <div class="search">
+      <label for="search">Gemeinde suchen</label>
+      <input id="search" type="search" placeholder="z. B. Lebach" autocomplete="off" enterkeyhint="search" aria-controls="gem-list">
+    </div>
+
+    <ul id="gem-list" class="gem-list"></ul>
+    <p id="no-results" class="empty" hidden>Keine Gemeinde mit diesem Namen gefunden.</p>
+  </section>
+
+  <!-- Gemeindeansicht -->
+  <section id="detail" hidden aria-labelledby="detail-title">
+    <button class="back" id="back" type="button">&larr; Alle Gemeinden</button>
+    <h2 class="detail-title" id="detail-title" tabindex="-1"></h2>
+
+    <div class="panel">
+      <div class="cases">
+        <div>
+          <div class="big" id="k-cases">0</div>
+          <div class="lbl">Straftaten 2025</div>
+        </div>
+        <div class="cmp">
+          <span id="k-prev"></span>
+          <small>Straftaten 2024</small>
+        </div>
+        <div class="cmp">
+          <span id="k-delta"></span>
+          <small>Veränderung zum Vorjahr</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3 class="section">Aufteilung nach Deliktbereich</h3>
+        <p class="hint">Straftaten 2025. Segment oder Eintrag anklicken für Details.</p>
+        <div class="pie-layout">
+          <svg id="pie" viewBox="0 0 200 200" role="group" aria-label="Kreisdiagramm der Straftaten nach Deliktbereich"></svg>
+          <ul class="legend" id="legend"></ul>
+        </div>
+        <p class="readout" id="readout" aria-live="polite"></p>
+      </div>
+
+      <div class="panel">
+        <h3 class="section">Häufigkeitszahl 2025</h3>
+        <p class="hint">Straftaten je 100.000 Einwohner</p>
+        <div class="hz-big" id="hz-value">0</div>
+        <div class="hz-unit">Fälle pro 100.000 Einwohner</div>
+        <dl class="hz-facts">
+          <div><dt>Ohne ausländerrechtl. Verstöße</dt><dd id="hz-wo"></dd></div>
+          <div><dt>Häufigkeitszahl 2024</dt><dd id="hz-prev"></dd></div>
+          <div><dt>Veränderung</dt><dd id="hz-delta"></dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 class="section">Einordnung im Landkreis</h3>
+      <p class="rank" id="rank"></p>
+      <p class="hint">Häufigkeitszahl 2025 aller 13 Gemeinden, absteigend sortiert</p>
+      <ul class="bars" id="bars" aria-label="Balkendiagramm der Häufigkeitszahlen"></ul>
+    </div>
+
+    <footer class="note">
+      Quelle: Polizei Saarland
+    </footer>
+  </section>
+</main>
+
+<script>
+// ---------- Daten (Landkreis Saarlouis, PKS 2024/2025) ----------
+// cats (Rohdaten 2025): [sexuell, Rohheit, Diebstahl o.e.U., Diebstahl u.e.U., Vermögen, sonstige, Nebengesetze, Leben]
+const DATA = [
+  { name: "Saarlouis",           c24: 3922, c25: 3460, hz25: 9186,  hz25wo: 9170,  hz24: 10348, cats: [69,655,937,356,455,851,135,2] },
+  { name: "Dillingen",           c24: 1465, c25: 1593, hz25: 7399,  hz25wo: 7381,  hz24: 6797,  cats: [26,374,391,168,171,402,60,1] },
+  { name: "Lebach",              c24: 2543, c25: 2084, hz25: 10705, hz25wo: 7027,  hz24: 12816, cats: [41,244,364,78,187,371,799,0] },
+  { name: "Bous",                c24: 413,  c25: 406,  hz25: 5646,  hz25wo: 5604,  hz24: 5741,  cats: [16,66,120,44,70,78,12,0] },
+  { name: "Schmelz",             c24: 598,  c25: 769,  hz25: 4529,  hz25wo: 4523,  hz24: 3519,  cats: [15,159,118,27,88,151,208,3] },
+  { name: "Wallerfangen",        c24: 420,  c25: 401,  hz25: 4301,  hz25wo: 4269,  hz24: 4438,  cats: [20,80,77,38,73,94,18,1] },
+  { name: "Ensdorf",             c24: 270,  c25: 279,  hz25: 4027,  hz25wo: 4013,  hz24: 3916,  cats: [3,52,64,47,33,71,9,0] },
+  { name: "Saarwellingen",       c24: 430,  c25: 516,  hz25: 3790,  hz25wo: 3775,  hz24: 3125,  cats: [11,122,97,50,80,136,20,0] },
+  { name: "Rehlingen-Siersburg", c24: 524,  c25: 524,  hz25: 3509,  hz25wo: 3482,  hz24: 3492,  cats: [27,123,91,74,67,114,28,0] },
+  { name: "Überherrn",           c24: 605,  c25: 448,  hz25: 3700,  hz25wo: 3237,  hz24: 4991,  cats: [11,91,91,52,38,82,83,0] },
+  { name: "Schwalbach",          c24: 555,  c25: 563,  hz25: 3109,  hz25wo: 3098,  hz24: 3075,  cats: [34,138,94,43,78,145,31,0] },
+  { name: "Wadgassen",           c24: 505,  c25: 502,  hz25: 2785,  hz25wo: 2768,  hz24: 2801,  cats: [23,137,72,62,47,133,27,1] },
+  { name: "Nalbach",             c24: 258,  c25: 241,  hz25: 2605,  hz25wo: 2605,  hz24: 2778,  cats: [11,55,50,25,26,61,12,1] }
+];
+
+// Vereinfachte Deliktgruppen
+const GROUPS = [
+  { label: "Diebstahl",                        color: "#004d8b", fn: c => c[2] + c[3] },
+  { label: "Rohheits- und Freiheitsdelikte",   color: "#3f7fb3", fn: c => c[1] },
+  { label: "Vermögens- und Fälschungsdelikte", color: "#8fb8d8", fn: c => c[4] },
+  { label: "Sexuelle Selbstbestimmung",        color: "#5a6876", fn: c => c[0] },
+  { label: "Sonstige Straftaten",              color: "#c9d3dd", fn: c => c[5] + c[6] + c[7] }
+];
+const TOTAL25 = DATA.reduce((s, g) => s + g.c25, 0);
+const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Rangbezeichnung: Plätze 1 bis 6 von oben ("fünfthöchste"), ab Platz 7 von unten gezählt ("siebtniedrigste")
+function ordinal(rank) {
+  const n = DATA.length;
+  const HOCH = ["", "höchste", "zweithöchste", "dritthöchste", "vierthöchste", "fünfthöchste", "sechsthöchste"];
+  const NIEDRIG = ["", "niedrigste", "zweitniedrigste", "drittniedrigste", "viertniedrigste", "fünftniedrigste", "sechstniedrigste",
+                   "siebtniedrigste", "achtniedrigste", "neuntniedrigste", "zehntniedrigste", "elftniedrigste", "zwölftniedrigste"];
+  if (rank <= 6) return HOCH[rank];
+  return NIEDRIG[n + 1 - rank];
+}
+
+// ---------- Hilfsfunktionen ----------
+const nf = new Intl.NumberFormat("de-DE");
+const fmt = n => nf.format(n);
+const fmtPct = (x, d = 1) => new Intl.NumberFormat("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }).format(x * 100) + " %";
+const fmtSigned = x => (x > 0 ? "+" : x < 0 ? "\u2212" : "±") + new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(Math.abs(x) * 100) + " %";
+const el = id => document.getElementById(id);
+const easeOut = p => 1 - Math.pow(1 - p, 3);
+
+// Zählt eine Zahl animiert hoch
+function countUp(node, to) {
+  if (REDUCED) { node.textContent = fmt(to); return; }
+  const start = performance.now(), dur = 900;
+  (function step(now) {
+    const p = Math.min(1, (now - start) / dur);
+    node.textContent = fmt(Math.round(to * easeOut(p)));
+    if (p < 1) requestAnimationFrame(step);
+  })(start);
+}
+
+// ---------- Übersicht ----------
+const listEl = el("gem-list");
+const searchEl = el("search");
+const noRes = el("no-results");
+
+function renderList(filter = "") {
+  const q = filter.trim().toLowerCase();
+  const items = DATA.filter(g => g.name.toLowerCase().includes(q));
+  listEl.innerHTML = "";
+  items.forEach(g => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "gem-btn";
+    btn.setAttribute("aria-label", `${g.name}, ${fmt(g.c25)} Straftaten 2025`);
+    btn.innerHTML = `<span class="gem-name">${g.name}</span><span class="gem-meta">${fmt(g.c25)} Straftaten</span>`;
+    btn.addEventListener("click", () => showDetail(g.name));
+    li.appendChild(btn);
+    listEl.appendChild(li);
+  });
+  noRes.hidden = items.length > 0;
+  postHeight();
+}
+searchEl.addEventListener("input", e => renderList(e.target.value));
+searchEl.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    const first = DATA.find(g => g.name.toLowerCase().includes(searchEl.value.trim().toLowerCase()));
+    if (first) showDetail(first.name);
+  }
+});
+
+// ---------- Gemeindeansicht ----------
+let current = null;
+let pieSel = null;      // ausgewähltes Segment (Index in GROUPS) oder null
+let pieGeom = [];       // Mittelwinkel je Segment für das Herausziehen
+
+function showDetail(name) {
+  const g = DATA.find(x => x.name === name);
+  if (!g) return;
+  current = g;
+  pieSel = null;
+  el("home").hidden = true;
+  el("detail").hidden = false;
+  el("detail-title").textContent = g.name;
+
+  // Kennzahlen
+  countUp(el("k-cases"), g.c25);
+  el("k-prev").textContent = fmt(g.c24);
+  el("k-delta").textContent = fmtSigned((g.c25 - g.c24) / g.c24);
+
+  // Kreisdiagramm
+  renderPieLegend(g);
+  animatePie(g);
+
+  // Häufigkeitszahl
+  countUp(el("hz-value"), g.hz25);
+  el("hz-wo").textContent = fmt(g.hz25wo);
+  el("hz-prev").textContent = fmt(g.hz24);
+  el("hz-delta").textContent = fmtSigned((g.hz25 - g.hz24) / g.hz24);
+
+  // Einordnung
+  const sorted = [...DATA].sort((a, b) => b.hz25 - a.hz25);
+  const rank = sorted.findIndex(x => x.name === g.name) + 1;
+  el("rank").innerHTML = `<strong>${g.name}</strong> weist mit einer Häufigkeitszahl von ${fmt(g.hz25)} Straftaten je 100.000 Einwohnern die ${ordinal(rank)} Kriminalität im Landkreis Saarlouis auf.`;
+
+  const max = sorted[0].hz25;
+  const bars = el("bars");
+  bars.innerHTML = "";
+  const fills = [];
+  sorted.forEach(x => {
+    const li = document.createElement("li");
+    if (x.name === g.name) li.className = "current";
+    li.innerHTML = `<span class="bl">${x.name}</span>
+      <span class="track"><span class="fill"></span></span>
+      <span class="bv">${fmt(x.hz25)}</span>`;
+    bars.appendChild(li);
+    fills.push({ node: li.querySelector(".fill"), w: (x.hz25 / max * 100).toFixed(1) + "%" });
+  });
+  // Balken wachsen nacheinander ein
+  fills.forEach((f, i) => {
+    f.node.style.transitionDelay = REDUCED ? "0ms" : (i * 45) + "ms";
+    requestAnimationFrame(() => requestAnimationFrame(() => { f.node.style.width = f.w; }));
+  });
+
+  el("detail-title").focus({ preventScroll: true });
+  window.scrollTo({ top: 0, behavior: "auto" });
+  postHeight();
+}
+
+// Kreisdiagramm: Geometrie
+function pieValues(g) {
+  const vals = GROUPS.map(gr => gr.fn(g.cats));
+  const total = vals.reduce((a, b) => a + b, 0);
+  return { vals, total };
+}
+
+// Zeichnet das Diagramm; t = Fortschritt 0..1 (für die Einblendung)
+function buildPie(g, t) {
+  const svg = el("pie");
+  const { vals, total } = pieValues(g);
+  const cx = 100, cy = 100, r = 98;
+  let a = -Math.PI / 2;
+  pieGeom = [];
+  let html = "";
+  GROUPS.forEach((gr, i) => {
+    const v = vals[i];
+    if (!v) { pieGeom[i] = null; return; }
+    const pct = v / total;
+    const span = pct * 2 * Math.PI;
+    pieGeom[i] = a + span / 2;
+    const label = `${gr.label}: ${fmt(v)} Fälle (${fmtPct(pct)})`;
+    const drawSpan = span * t;
+    if (pct >= 0.9999) {
+      html += `<circle class="slice" data-i="${i}" tabindex="0" role="button" aria-label="${label}" cx="${cx}" cy="${cy}" r="${r}" fill="${gr.color}" stroke="#fff" stroke-width="1"><title>${label}</title></circle>`;
+    } else if (drawSpan > 0.0005) {
+      const x1 = cx + r * Math.cos(a), y1 = cy + r * Math.sin(a);
+      const x2 = cx + r * Math.cos(a + drawSpan), y2 = cy + r * Math.sin(a + drawSpan);
+      const large = drawSpan > Math.PI ? 1 : 0;
+      html += `<path class="slice" data-i="${i}" tabindex="0" role="button" aria-label="${label}" d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${gr.color}" stroke="#fff" stroke-width="1"><title>${label}</title></path>`;
+    }
+    a += span;
+  });
+  svg.innerHTML = `<title>Kreisdiagramm der Straftaten nach Deliktbereich, ${g.name}</title>` + html;
+  applySelection();
+}
+
+// Einblendung: Segmente drehen sich nacheinander auf
+function animatePie(g) {
+  if (REDUCED) { buildPie(g, 1); return; }
+  const start = performance.now(), dur = 950;
+  (function step(now) {
+    const p = Math.min(1, (now - start) / dur);
+    buildPie(g, easeOut(p));
+    if (p < 1) requestAnimationFrame(step);
+  })(start);
+}
+
+// Auswahl anzeigen: Segment herausziehen, übrige abdunkeln
+function applySelection() {
+  if (!current) return;
+  const { vals, total } = pieValues(current);
+  const sel = pieSel;
+  el("pie").querySelectorAll(".slice").forEach(node => {
+    const i = Number(node.dataset.i);
+    const isSel = sel === i;
+    const mid = pieGeom[i] ?? 0;
+    const off = isSel ? 7 : 0;
+    node.style.transform = isSel ? `translate(${(Math.cos(mid) * off).toFixed(2)}px, ${(Math.sin(mid) * off).toFixed(2)}px)` : "";
+    node.style.opacity = sel === null || isSel ? "1" : "0.35";
+    node.setAttribute("aria-pressed", isSel ? "true" : "false");
+  });
+  document.querySelectorAll(".leg-btn").forEach(b => {
+    b.setAttribute("aria-pressed", Number(b.dataset.i) === sel ? "true" : "false");
+  });
+  const readout = el("readout");
+  if (sel === null) {
+    readout.textContent = "Kein Segment ausgewählt.";
+  } else {
+    const v = vals[sel];
+    readout.innerHTML = `<strong>${GROUPS[sel].label}:</strong> ${fmt(v)} Fälle, ${fmtPct(v / total)} der Straftaten in ${current.name}.`;
+  }
+}
+
+function togglePie(i) {
+  pieSel = pieSel === i ? null : i;
+  applySelection();
+}
+
+function renderPieLegend(g) {
+  const legend = el("legend");
+  const { vals, total } = pieValues(g);
+  legend.innerHTML = "";
+  GROUPS.forEach((gr, i) => {
+    const v = vals[i];
+    const li = document.createElement("li");
+    li.innerHTML = `<button class="leg-btn" type="button" data-i="${i}" aria-pressed="false">
+      <span class="swatch" style="background:${gr.color}" aria-hidden="true"></span>
+      <span class="leg-label">${gr.label}</span>
+      <span><span class="val">${fmt(v)}</span><span class="pct">${fmtPct(v / total, 0)}</span></span></button>`;
+    legend.appendChild(li);
+  });
+  el("readout").textContent = "Kein Segment ausgewählt.";
+}
+
+// Klick auf Segment oder Legendeneintrag
+el("pie").addEventListener("click", e => {
+  const node = e.target.closest(".slice");
+  if (node) togglePie(Number(node.dataset.i));
+});
+el("pie").addEventListener("keydown", e => {
+  const node = e.target.closest(".slice");
+  if (node && (e.key === "Enter" || e.key === " ")) {
+    e.preventDefault();
+    togglePie(Number(node.dataset.i));
+  }
+});
+el("legend").addEventListener("click", e => {
+  const btn = e.target.closest(".leg-btn");
+  if (btn) togglePie(Number(btn.dataset.i));
+});
+
+el("back").addEventListener("click", () => {
+  el("detail").hidden = true;
+  el("home").hidden = false;
+  searchEl.focus({ preventScroll: true });
+  window.scrollTo({ top: 0, behavior: "auto" });
+  postHeight();
+});
+
+renderList();
+
+// Höhe an das einbettende Dokument melden (für iframe mit automatischer Höhe)
+function postHeight() {
+  const h = Math.ceil(document.documentElement.scrollHeight);
+  try { window.parent.postMessage({ type: "polizei-atlas:height", height: h }, "*"); } catch (e) {}
+}
+if ("ResizeObserver" in window) new ResizeObserver(postHeight).observe(document.body);
+window.addEventListener("load", postHeight);
+window.addEventListener("resize", postHeight);
+postHeight();
+</script>
+</body>
+</html>
