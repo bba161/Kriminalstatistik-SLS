@@ -14,16 +14,14 @@
     --muted: #5a6876;
     --line: #cdd7e1;
     --soft: #eef3f7;
-    --bg: #ffffff;
     --focus: #ffb000;
   }
   * { box-sizing: border-box; border-radius: 0; }
-  html, body { margin: 0; padding: 0; }
+  html, body { margin: 0; padding: 0; background: transparent; }
   body {
     font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     font-weight: 400;
     color: var(--ink);
-    background: var(--bg);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -webkit-text-size-adjust: 100%;
@@ -67,10 +65,12 @@
   /* Gemeindeansicht */
   .back { background: none; border: 0; padding: 10px 0; min-height: 44px; color: var(--brand); font-weight: 600; font-size: 0.95rem; cursor: pointer; }
   .back:hover { text-decoration: underline; }
+  .back-bottom { display: block; margin-top: 20px; padding: 12px 16px; border: 1px solid var(--brand); color: var(--brand); width: 100%; text-align: center; }
+  .back-bottom:hover { background: var(--brand); color: #fff; text-decoration: none; }
   .detail-title { font-size: 2.1rem; margin: 8px 0 20px; }
   .detail-title:focus { outline: none; }
 
-  .panel { border: 1px solid var(--line); padding: 20px; min-width: 0; }
+  .panel { border: 1px solid var(--line); padding: 20px; min-width: 0; background: #fff; }
   .panel + .panel { margin-top: 16px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
   .grid-2 > * { min-width: 0; }
@@ -105,6 +105,7 @@
   .leg-btn .pct { color: var(--muted); margin-left: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .readout { font-size: 0.85rem; color: var(--muted); margin: 14px 0 0; min-height: 2.6em; }
   .readout strong { color: var(--ink); font-weight: 600; }
+  .fn { font-size: 0.78rem; color: var(--muted); margin: 12px 0 0; line-height: 1.5; }
 
   /* Häufigkeitszahl */
   .hz-big { font-size: 3rem; font-weight: 700; color: var(--brand); letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -213,6 +214,7 @@
           <ul class="legend" id="legend"></ul>
         </div>
         <p class="readout" id="readout" aria-live="polite"></p>
+        <p class="fn" id="fn" hidden></p>
       </div>
 
       <div class="panel">
@@ -231,13 +233,14 @@
     <div class="panel">
       <h3 class="section">Einordnung im Landkreis</h3>
       <p class="rank" id="rank"></p>
-      <p class="hint">Häufigkeitszahl 2025 aller 13 Gemeinden, absteigend sortiert</p>
-      <ul class="bars" id="bars" aria-label="Balkendiagramm der Häufigkeitszahlen"></ul>
+      <p class="hint">Häufigkeitszahl 2025 ohne ausländerrechtliche Verstöße, absteigend sortiert.</p>
+      <ul class="bars" id="bars" aria-label="Balkendiagramm der Häufigkeitszahlen ohne ausländerrechtliche Verstöße"></ul>
     </div>
 
     <footer class="note">
       Quelle: Polizei Saarland
     </footer>
+    <button class="back back-bottom" id="back-bottom" type="button">&larr; Zurück zur Übersicht</button>
   </section>
 </main>
 
@@ -260,13 +263,15 @@ const DATA = [
   { name: "Nalbach",             c24: 258,  c25: 241,  hz25: 2605,  hz25wo: 2605,  hz24: 2778,  cats: [11,55,50,25,26,61,12,1] }
 ];
 
-// Vereinfachte Deliktgruppen
+// Deliktgruppen laut PKS-Deliktarten-Tabelle 2025 (cats-Index: 0 Sexual, 1 Rohheit, 2 Diebstahl o.e.U., 3 Diebstahl u.e.U., 4 Vermögen, 5 sonstige Straftatbestände, 6 Nebengesetze, 7 Leben)
 const GROUPS = [
-  { label: "Diebstahl",                        color: "#004d8b", fn: c => c[2] + c[3] },
-  { label: "Rohheits- und Freiheitsdelikte",   color: "#3f7fb3", fn: c => c[1] },
-  { label: "Vermögens- und Fälschungsdelikte", color: "#8fb8d8", fn: c => c[4] },
-  { label: "Sexuelle Selbstbestimmung",        color: "#5a6876", fn: c => c[0] },
-  { label: "Sonstige Straftaten",              color: "#c9d3dd", fn: c => c[5] + c[6] + c[7] }
+  { label: "Diebstahl",                             color: "#004d8b", fn: c => c[2] + c[3] },
+  { label: "Rohheits- und Freiheitsdelikte",        color: "#2c6b9e", fn: c => c[1] },
+  { label: "Vermögens- und Fälschungsdelikte",      color: "#5f93bf", fn: c => c[4] },
+  { label: "Sexualstraftaten",                      color: "#1d2b3a", fn: c => c[0] },
+  { label: "Sonstige Straftatbestände¹",            color: "#9fbcd6", fn: c => c[5], note: "¹ Sonstige Straftatbestände, z. B. Sachbeschädigung, Beleidigung." },
+  { label: "Strafrechtliche Nebengesetze²",         color: "#cbdbe9", fn: c => c[6], note: "² Strafrechtliche Nebengesetze, u. a. Betäubungsmitteldelikte, Umweltdelikte, ausländerrechtliche Verstöße." },
+  { label: "Straftaten gegen das Leben³",           color: "#6b7785", fn: c => c[7], note: "³ Straftaten gegen das Leben, z. B. Mord, Totschlag, fahrlässige Tötung." }
 ];
 const TOTAL25 = DATA.reduce((s, g) => s + g.c25, 0);
 const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -360,12 +365,12 @@ function showDetail(name) {
   el("hz-prev").textContent = fmt(g.hz24);
   el("hz-delta").textContent = fmtSigned((g.hz25 - g.hz24) / g.hz24);
 
-  // Einordnung
-  const sorted = [...DATA].sort((a, b) => b.hz25 - a.hz25);
+  // Einordnung: Sortierung nach HZ ohne ausländerrechtliche Verstöße
+  const sorted = [...DATA].sort((a, b) => b.hz25wo - a.hz25wo);
   const rank = sorted.findIndex(x => x.name === g.name) + 1;
-  el("rank").innerHTML = `<strong>${g.name}</strong> weist mit einer Häufigkeitszahl von ${fmt(g.hz25)} Straftaten je 100.000 Einwohnern die ${ordinal(rank)} Kriminalität im Landkreis Saarlouis auf.`;
+  el("rank").innerHTML = `<strong>${g.name}</strong> weist mit einer Häufigkeitszahl von ${fmt(g.hz25wo)} Straftaten je 100.000 Einwohnern ohne ausländerrechtliche Verstöße die ${ordinal(rank)} Kriminalität im Landkreis Saarlouis auf.`;
 
-  const max = sorted[0].hz25;
+  const max = sorted[0].hz25wo;
   const bars = el("bars");
   bars.innerHTML = "";
   const fills = [];
@@ -374,9 +379,9 @@ function showDetail(name) {
     if (x.name === g.name) li.className = "current";
     li.innerHTML = `<span class="bl">${x.name}</span>
       <span class="track"><span class="fill"></span></span>
-      <span class="bv">${fmt(x.hz25)}</span>`;
+      <span class="bv">${fmt(x.hz25wo)}</span>`;
     bars.appendChild(li);
-    fills.push({ node: li.querySelector(".fill"), w: (x.hz25 / max * 100).toFixed(1) + "%" });
+    fills.push({ node: li.querySelector(".fill"), w: (x.hz25wo / max * 100).toFixed(1) + "%" });
   });
   // Balken wachsen nacheinander ein
   fills.forEach((f, i) => {
@@ -459,8 +464,13 @@ function applySelection() {
     readout.textContent = "Kein Segment ausgewählt.";
   } else {
     const v = vals[sel];
-    readout.innerHTML = `<strong>${GROUPS[sel].label}:</strong> ${fmt(v)} Fälle, ${fmtPct(v / total)} der Straftaten in ${current.name}.`;
+    let text = `<strong>${GROUPS[sel].label.replace(/[¹²³]/g, "")}:</strong> ${fmt(v)} Fälle, ${fmtPct(v / total)} der Straftaten in ${current.name}.`;
+    readout.innerHTML = text;
   }
+  const fnEl = el("fn");
+  const note = sel !== null ? GROUPS[sel].note : null;
+  fnEl.textContent = note || "";
+  fnEl.hidden = !note;
 }
 
 function togglePie(i) {
@@ -501,13 +511,15 @@ el("legend").addEventListener("click", e => {
   if (btn) togglePie(Number(btn.dataset.i));
 });
 
-el("back").addEventListener("click", () => {
+function goBack() {
   el("detail").hidden = true;
   el("home").hidden = false;
   searchEl.focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: "auto" });
   postHeight();
-});
+}
+el("back").addEventListener("click", goBack);
+el("back-bottom").addEventListener("click", goBack);
 
 renderList();
 
