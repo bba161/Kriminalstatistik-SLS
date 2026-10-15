@@ -8,14 +8,73 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Farben: Hell (Standard) und Dunkel (automatisch bei dunklem Systemmodus oder mit Klasse "dark" auf <html>) */
   :root {
+    color-scheme: light dark;
     --brand: #004d8b;
+    --on-brand: #ffffff;
     --ink: #111d29;
     --muted: #5a6876;
     --line: #cdd7e1;
     --soft: #eef3f7;
     --focus: #ffb000;
+    --surface: #ffffff;
+    --input-border: #9fb0c0;
+    --bar: #9fbfdc;
+    --slice-stroke: #ffffff;
+    --g0: #004d8b; /* Diebstahl */
+    --g1: #2c6b9e; /* Rohheits- und Freiheitsdelikte */
+    --g2: #5f93bf; /* Vermögens- und Fälschungsdelikte */
+    --g3: #1d2b3a; /* Sexualstraftaten */
+    --g4: #9fbcd6; /* Sonstige Straftatbestände */
+    --g5: #cbdbe9; /* Strafrechtliche Nebengesetze */
+    --g6: #6b7785; /* Straftaten gegen das Leben */
   }
+
+  html.dark, :root[data-theme="dark"] {
+    --brand: #8cc4f0;
+    --on-brand: #0b1520;
+    --ink: #e6edf3;
+    --muted: #9dabb9;
+    --line: #34404d;
+    --soft: #1c2630;
+    --focus: #ffc233;
+    --surface: #161f29;
+    --input-border: #5b6b7c;
+    --bar: #3d5a73;
+    --slice-stroke: #161f29;
+    --g0: #6fb0e6; /* Diebstahl */
+    --g1: #4a86bd; /* Rohheits- und Freiheitsdelikte */
+    --g2: #2f6490; /* Vermögens- und Fälschungsdelikte */
+    --g3: #dbe8f5; /* Sexualstraftaten */
+    --g4: #9fb3c6; /* Sonstige Straftatbestände */
+    --g5: #56697d; /* Strafrechtliche Nebengesetze */
+    --g6: #8793a2; /* Straftaten gegen das Leben */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not(.light):not([data-theme="light"]) {
+      --brand: #8cc4f0;
+      --on-brand: #0b1520;
+      --ink: #e6edf3;
+      --muted: #9dabb9;
+      --line: #34404d;
+      --soft: #1c2630;
+      --focus: #ffc233;
+      --surface: #161f29;
+      --input-border: #5b6b7c;
+      --bar: #3d5a73;
+      --slice-stroke: #161f29;
+      --g0: #6fb0e6;
+      --g1: #4a86bd;
+      --g2: #2f6490;
+      --g3: #dbe8f5;
+      --g4: #9fb3c6;
+      --g5: #56697d;
+      --g6: #8793a2;
+    }
+  }
+
   * { box-sizing: border-box; border-radius: 0; }
   html, body { margin: 0; padding: 0; background: transparent; }
   body {
@@ -46,9 +105,10 @@
   .search label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px; }
   .search input {
     width: 100%; max-width: 420px; min-height: 48px; padding: 10px 12px; font-size: 1rem;
-    border: 1px solid #9fb0c0; background: #fff; color: var(--ink);
+    border: 1px solid var(--input-border); background: var(--surface); color: var(--ink);
     -webkit-appearance: none; appearance: none;
   }
+  .search input::placeholder { color: var(--muted); opacity: 1; }
   .search input:focus { border-color: var(--brand); }
   .gem-list { list-style: none; margin: 20px 0 0; padding: 0; border-top: 1px solid var(--line); }
   .gem-list li { border-bottom: 1px solid var(--line); }
@@ -66,11 +126,11 @@
   .back { background: none; border: 0; padding: 10px 0; min-height: 44px; color: var(--brand); font-weight: 600; font-size: 0.95rem; cursor: pointer; }
   .back:hover { text-decoration: underline; }
   .back-bottom { display: block; margin-top: 20px; padding: 12px 16px; border: 1px solid var(--brand); color: var(--brand); width: 100%; text-align: center; }
-  .back-bottom:hover { background: var(--brand); color: #fff; text-decoration: none; }
+  .back-bottom:hover { background: var(--brand); color: var(--on-brand); text-decoration: none; }
   .detail-title { font-size: 2.1rem; margin: 8px 0 20px; }
   .detail-title:focus { outline: none; }
 
-  .panel { border: 1px solid var(--line); padding: 20px; min-width: 0; background: #fff; }
+  .panel { border: 1px solid var(--line); padding: 20px; min-width: 0; background: var(--surface); }
   .panel + .panel { margin-top: 16px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
   .grid-2 > * { min-width: 0; }
@@ -86,7 +146,7 @@
   .pie-layout { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr); gap: 20px; align-items: center; }
   .pie-layout > * { min-width: 0; }
   .pie-layout svg { width: 100%; height: auto; max-width: 180px; overflow: visible; display: block; }
-  .slice { cursor: pointer; transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .3s ease; }
+  .slice { cursor: pointer; stroke: var(--slice-stroke); stroke-width: 1; transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .3s ease; }
   .slice:focus { outline: none; }
   .slice:focus-visible { stroke: var(--focus); stroke-width: 3; }
   .legend { list-style: none; margin: 0; padding: 0; font-size: 0.875rem; }
@@ -124,7 +184,7 @@
   .bl-btn:hover, .bl-btn:focus-visible { color: var(--brand); text-decoration: underline; }
   .bl-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
   .bars .track { height: 14px; background: var(--soft); }
-  .bars .fill { display: block; height: 100%; width: 0; background: #9fbfdc; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .bars .fill { display: block; height: 100%; width: 0; background: var(--bar); transition: width .9s cubic-bezier(.2,.8,.2,1); }
   .bars li.current .bl { color: var(--ink); font-weight: 600; }
   .bars li.current .fill { background: var(--brand); }
   .bars .bv { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -267,14 +327,15 @@ const DATA = [
 ];
 
 // Deliktgruppen laut PKS-Deliktarten-Tabelle 2025 (cats-Index: 0 Sexual, 1 Rohheit, 2 Diebstahl o.e.U., 3 Diebstahl u.e.U., 4 Vermögen, 5 sonstige Straftatbestände, 6 Nebengesetze, 7 Leben)
+// Farben stammen aus CSS-Variablen, damit sie im hellen und dunklen Modus passen.
 const GROUPS = [
-  { label: "Diebstahl",                             color: "#004d8b", fn: c => c[2] + c[3] },
-  { label: "Rohheits- und Freiheitsdelikte",        color: "#2c6b9e", fn: c => c[1] },
-  { label: "Vermögens- und Fälschungsdelikte",      color: "#5f93bf", fn: c => c[4] },
-  { label: "Sexualstraftaten",                      color: "#1d2b3a", fn: c => c[0] },
-  { label: "Sonstige Straftatbestände¹",            color: "#9fbcd6", fn: c => c[5], note: "¹ Sonstige Straftatbestände, z. B. Sachbeschädigung, Beleidigung." },
-  { label: "Strafrechtliche Nebengesetze²",         color: "#cbdbe9", fn: c => c[6], note: "² Strafrechtliche Nebengesetze, u. a. Betäubungsmitteldelikte, Umweltdelikte, ausländerrechtliche Verstöße." },
-  { label: "Straftaten gegen das Leben³",           color: "#6b7785", fn: c => c[7], note: "³ Straftaten gegen das Leben, z. B. Mord, Totschlag, fahrlässige Tötung." }
+  { label: "Diebstahl",                             color: "var(--g0)", fn: c => c[2] + c[3] },
+  { label: "Rohheits- und Freiheitsdelikte",        color: "var(--g1)", fn: c => c[1] },
+  { label: "Vermögens- und Fälschungsdelikte",      color: "var(--g2)", fn: c => c[4] },
+  { label: "Sexualstraftaten",                      color: "var(--g3)", fn: c => c[0] },
+  { label: "Sonstige Straftatbestände¹",            color: "var(--g4)", fn: c => c[5], note: "¹ Sonstige Straftatbestände, z. B. Sachbeschädigung, Beleidigung." },
+  { label: "Strafrechtliche Nebengesetze²",         color: "var(--g5)", fn: c => c[6], note: "² Strafrechtliche Nebengesetze, u. a. Betäubungsmitteldelikte, Umweltdelikte, ausländerrechtliche Verstöße." },
+  { label: "Straftaten gegen das Leben³",           color: "var(--g6)", fn: c => c[7], note: "³ Straftaten gegen das Leben, z. B. Mord, Totschlag, fahrlässige Tötung." }
 ];
 const TOTAL25 = DATA.reduce((s, g) => s + g.c25, 0);
 const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -421,12 +482,12 @@ function buildPie(g, t) {
     const label = `${gr.label}: ${fmt(v)} Fälle (${fmtPct(pct)})`;
     const drawSpan = span * t;
     if (pct >= 0.9999) {
-      html += `<circle class="slice" data-i="${i}" tabindex="0" role="button" aria-label="${label}" cx="${cx}" cy="${cy}" r="${r}" fill="${gr.color}" stroke="#fff" stroke-width="1"><title>${label}</title></circle>`;
+      html += `<circle class="slice" data-i="${i}" tabindex="0" role="button" aria-label="${label}" cx="${cx}" cy="${cy}" r="${r}" style="fill:${gr.color}"><title>${label}</title></circle>`;
     } else if (drawSpan > 0.0005) {
       const x1 = cx + r * Math.cos(a), y1 = cy + r * Math.sin(a);
       const x2 = cx + r * Math.cos(a + drawSpan), y2 = cy + r * Math.sin(a + drawSpan);
       const large = drawSpan > Math.PI ? 1 : 0;
-      html += `<path class="slice" data-i="${i}" tabindex="0" role="button" aria-label="${label}" d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${gr.color}" stroke="#fff" stroke-width="1"><title>${label}</title></path>`;
+      html += `<path class="slice" data-i="${i}" tabindex="0" role="button" aria-label="${label}" d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" style="fill:${gr.color}"><title>${label}</title></path>`;
     }
     a += span;
   });
