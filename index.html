@@ -120,6 +120,9 @@
   .bars { list-style: none; margin: 0; padding: 0; }
   .bars li { display: grid; grid-template-columns: 150px 1fr 56px; gap: 10px; align-items: center; padding: 4px 0; font-size: 0.85rem; }
   .bars .bl { text-align: right; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bl-btn { all: unset; box-sizing: border-box; display: block; width: 100%; text-align: right; cursor: pointer; color: inherit; font: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bl-btn:hover, .bl-btn:focus-visible { color: var(--brand); text-decoration: underline; }
+  .bl-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
   .bars .track { height: 14px; background: var(--soft); }
   .bars .fill { display: block; height: 100%; width: 0; background: #9fbfdc; transition: width .9s cubic-bezier(.2,.8,.2,1); }
   .bars li.current .bl { color: var(--ink); font-weight: 600; }
@@ -368,7 +371,7 @@ function showDetail(name) {
   // Einordnung: Sortierung nach HZ ohne ausländerrechtliche Verstöße
   const sorted = [...DATA].sort((a, b) => b.hz25wo - a.hz25wo);
   const rank = sorted.findIndex(x => x.name === g.name) + 1;
-  el("rank").innerHTML = `<strong>${g.name}</strong> weist mit einer Häufigkeitszahl von ${fmt(g.hz25wo)} Straftaten je 100.000 Einwohnern ohne ausländerrechtliche Verstöße die ${ordinal(rank)} Kriminalität im Landkreis Saarlouis auf.`;
+  el("rank").innerHTML = `<strong>${g.name}</strong> weist mit einer Häufigkeitszahl von ${fmt(g.hz25wo)} Straftaten je 100.000 Einwohnern ohne ausländerrechtliche Verstöße die <strong>${ordinal(rank)}</strong> Kriminalität im Landkreis Saarlouis auf.`;
 
   const max = sorted[0].hz25wo;
   const bars = el("bars");
@@ -377,7 +380,7 @@ function showDetail(name) {
   sorted.forEach(x => {
     const li = document.createElement("li");
     if (x.name === g.name) li.className = "current";
-    li.innerHTML = `<span class="bl">${x.name}</span>
+    li.innerHTML = `<span class="bl"><button class="bl-btn" type="button" data-name="${x.name}">${x.name}</button></span>
       <span class="track"><span class="fill"></span></span>
       <span class="bv">${fmt(x.hz25wo)}</span>`;
     bars.appendChild(li);
@@ -519,6 +522,13 @@ function goBack() {
   postHeight();
 }
 el("back").addEventListener("click", goBack);
+el("bars").addEventListener("click", e => {
+  const btn = e.target.closest(".bl-btn");
+  if (!btn) return;
+  showDetail(btn.dataset.name);
+  window.scrollTo({ top: 0, behavior: "auto" });
+  postHeight();
+});
 el("back-bottom").addEventListener("click", goBack);
 
 renderList();
